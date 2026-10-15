@@ -2,6 +2,7 @@
 #define DATOSGENERALES_H
 
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -138,7 +139,7 @@ public:
 
     void agregar(int valor);//Insertar valor
     bool existe(int valor) const; //Verifica si un valor existe
-    void eliminar(int valor);//Elimina un valor de la lista
+    void eliminarL(int valor);//Elimina un valor de la lista
     int obtener(int posicion) const;//Consultar el entero en una posición
     int tamano() const;//Cantidad de elementos.
 };

@@ -26,3 +26,234 @@ void Metricas::mostrar(const char *nombre, long long memoriaLocal) {
     cout << "Componentes externos invocados: " << externas << "\n";//Llamadas externas registradas
     cout << "Memoria (aproximada): " << Memoria::actual() + memoriaLocal << " bytes\n";//Memoria contabilizada globalmente + Memoria local declarada
 }
+
+void ListaEnteros::ampliar() {
+    int nueva = (capacidad == 0) ? 4 : capacidad * 2;
+    int *nuevo = new int[nueva];
+
+    Memoria::reservar(sizeof(int) * nueva);
+
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        nuevo[i] = datos[i];
+    }
+    if (datos != 0) {
+        Memoria::liberar(sizeof(int) * capacidad);
+        delete[] datos;
+    }
+    datos = nuevo;
+    capacidad = nueva;
+}
+
+ListaEnteros::ListaEnteros() : datos(nullptr), cantidad(0), capacidad(0) {}
+
+ListaEnteros::~ListaEnteros() {
+    if (datos != 0) {
+        Memoria::liberar(sizeof(int) * capacidad);
+        delete[] datos;
+    }
+}
+
+void ListaEnteros::agregar(int valor) {
+    if (cantidad == capacidad) ampliar();//Validacion si requiere ampliar espacio
+    datos[cantidad++] = valor;
+}
+
+bool ListaEnteros::existe(int valor) const {//Buscar valor mediante un recorrido en ciclo
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        if (datos[i] == valor) return true;
+    }
+    return false;
+}
+
+void ListaEnteros::eliminarL(int valor) {//Busca el valor a eliminar, desplaza los elementos posteriores a la izq
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        if (datos[i] == valor) {
+            for (int j = i; j < cantidad - 1; j++) {
+                Metricas::iterar();
+                datos[j] = datos[j + 1];
+            }
+            cantidad--;
+            return;
+        }
+    }
+}
+
+int ListaEnteros::obtener(int posicion) const {//Devuelve el elemento correspondiente, si pos está dentro del rango
+    if (posicion < 0 || posicion >= cantidad) return -1;
+    return datos[posicion];
+}
+
+int ListaEnteros::tamano() const { return cantidad; }//Numero de elementos válidos
+
+//Cada fila y columna representa un usuario,el valor '1' indica que son amisgos. La matriz es simétrica
+MatrizAdyacencia::MatrizAdyacencia() : datos(0), n(0) {}
+
+MatrizAdyacencia::~MatrizAdyacencia() {
+    if (datos != 0) {
+        Memoria::liberar(sizeof(unsigned char) * n * n);
+        delete[] datos;
+    }
+}
+
+void MatrizAdyacencia::crear(int cantidadUsuarios) {/*Actualiza 'n' con la cantidad de usuarios para reserva un
+                                                    arreglo de n^2 elementos. */
+    if (datos != 0) {
+        Memoria::liberar(sizeof(unsigned char) * n * n);
+        delete[] datos;
+    }
+    n = cantidadUsuarios;
+    if (n > 0) {
+        datos = new unsigned char[n * n];
+        Memoria::reservar(sizeof(unsigned char) * n * n);
+        for (int i = 0; i < n * n; i++) {
+            Metricas::iterar();
+            datos[i] = 0;
+        }
+    }
+}
+
+void MatrizAdyacencia::hacerAmigo(int a, int b) {//'a' y 'b' son posiciones de los usuarios en la matriz.
+    if (a < 0 || b < 0 || a >= n || b >= n) return;
+    datos[a * n + b] = 1;
+    datos[b * n + a] = 1;
+}
+
+bool MatrizAdyacencia::amistad(int a, int b) const {//Verificar si dos usuarios son amigos
+    if (a < 0 || b < 0 || a >= n || b >= n) return false;
+    return datos[a * n + b] != 0;
+}
+
+int MatrizAdyacencia::cantidadComun(int a, int b) const {//Compara las filas de dos usuarios
+    if (a < 0 || b < 0 || a >= n || b >= n) return 0;
+    int comunes = 0;
+    for (int i = 0; i < n; i++) {
+        Metricas::iterar();
+        if (datos[a * n + i] && datos[b * n + i]) comunes++;
+    }
+    return comunes;
+}
+
+int MatrizAdyacencia::cantidadAmigos(int a) const {//Recorre la fila de 'a', cuenta las posiciones distintas de 0
+    if (a < 0 || a >= n) return 0;
+    int total = 0;
+    for (int i = 0; i < n; i++) {
+        Metricas::iterar();
+        if (datos[a * n + i]) total++;
+    }
+    return total;
+}
+
+int MatrizAdyacencia::tamano() const { return n; }//Dimensión de la matriz
+
+static char *copiarTexto(const char *texto) {//Copia de una cadena de caracteres
+    if (texto == 0) texto = "";
+    int n = (int)strlen(texto);//Cantidad de caracteres
+    char *copia = new char[n + 1];
+    Memoria::reservar(n + 1);
+    strcpy(copia, texto);//Copia la cadena completa
+    return copia;
+}
+
+static void liberarTexto(char *texto) {//Calcula los bytes contabilizados para libera espacio del arreglo
+    if (texto != 0) {
+        Memoria::liberar((long long)strlen(texto) + 1);
+        delete[] texto;
+    }
+}
+
+Mensaje::Mensaje(int i, int e, int r, const char *f, bool l, const char *t)
+    : id(i), emisor(e), receptor(r), fecha(copiarTexto(f)), leido(l), texto(copiarTexto(t)) {}
+Mensaje::~Mensaje() { liberarTexto(fecha); liberarTexto(texto); }
+
+
+int Mensaje::getId() const { return id; }
+int Mensaje::getEmisor() const { return emisor; }
+int Mensaje::getReceptor() const { return receptor; }
+const char *Mensaje::getFecha() const { return fecha; }
+const char *Mensaje::getTexto() const { return texto; }
+bool Mensaje::estaLeido() const { return leido; }
+void Mensaje::marcarLeido() { leido = true; }
+
+Foto::Foto(int i, const char *n, const char *f, long long t, const char *r, int l)
+    : id(i), nombre(copiarTexto(n)), fechaCaptura(copiarTexto(f)), tamano(t), ruta(copiarTexto(r)), likes(l) {}
+
+Foto::~Foto() {
+    liberarTexto(nombre);
+    liberarTexto(fechaCaptura);
+    liberarTexto(ruta);
+}
+
+int Foto::getId() const { return id; }
+const char *Foto::getNombre() const { return nombre; }
+const char *Foto::getFecha() const { return fechaCaptura; }
+long long Foto::getTamano() const { return tamano; }
+const char *Foto::getRuta() const { return ruta; }
+int Foto::getLikes() const { return likes; }
+void Foto::cambiarLike(bool agregar) {
+    if (agregar) likes++;
+    else if (likes > 0) likes--; }
+
+Album::Album(int i, int p, const char *n, const char *r, PrivacidadAlbum ap)
+    : id(i), propietario(p), nombre(copiarTexto(n)), ruta(copiarTexto(r)), privacidad(ap) {}
+
+Album::~Album() {
+    liberarTexto(nombre);
+    liberarTexto(ruta);
+}
+
+int Album::getId() const { return id; }
+int Album::getPropietario() const { return propietario; }
+const char *Album::getNombre() const { return nombre; }
+const char *Album::getRuta() const { return ruta; }
+PrivacidadAlbum Album::getPrivacidadAlbum() const { return privacidad; }
+void Album::agregarFoto(Foto *foto) { fotos.agregar(foto); }//Incorpora un puntero a la colección
+int Album::cantidadFotos() const { return fotos.tamano(); }
+Foto *Album::obtenerFoto(int posicion) const { return fotos.obtener(posicion); }
+
+//Petición de amistad entre dos usuarios
+Solicitud::Solicitud(int e, int r) : emisor(e), receptor(r) {}
+int Solicitud::getEmisor() const { return emisor; }
+int Solicitud::getReceptor() const { return receptor; }
+
+SugerenciaAmistad::SugerenciaAmistad(int u, int c) : usuarioId(u), comunes(c) {}
+int SugerenciaAmistad::getUsuarioId() const { return usuarioId; }
+int SugerenciaAmistad::getComunes() const { return comunes; }
+
+Usuario::Usuario(int i, const char *n, const char *c, const char *r)
+    : id(i), nombre(copiarTexto(n)), clave(copiarTexto(c)), rutaPerfil(copiarTexto(r)) {}
+
+Usuario::~Usuario() {
+    liberarTexto(nombre);
+    liberarTexto(clave);
+    liberarTexto(rutaPerfil);
+}
+
+int Usuario::getId() const { return id; }
+const char *Usuario::getNombre() const { return nombre; }
+const char *Usuario::getClave() const { return clave; }
+const char *Usuario::getRutaPerfil() const { return rutaPerfil; }
+
+int Usuario::cantidadAmigos() const { return amigos.tamano(); }
+void Usuario::agregarAmigo(int idAmigo) { if (!amigos.existe(idAmigo)) amigos.agregar(idAmigo); }/*Solamente se agrega
+                                                                                    si todavía no está en la lista.*/
+bool Usuario::esAmigo(int idAmigo) const { return amigos.existe(idAmigo); }
+void Usuario::quitarAmigo(int idAmigo) { amigos.eliminarL(idAmigo); }
+int Usuario::obtenerAmigo(int posicion) const { return amigos.obtener(posicion); }
+
+void Usuario::agregarEnviado(int idMensaje) { enviados.agregar(idMensaje); }
+void Usuario::agregarRecibido(int idMensaje) { recibidos.agregar(idMensaje); }
+const ListaEnteros &Usuario::getEnviados() const { return enviados; }
+const ListaEnteros &Usuario::getRecibidos() const { return recibidos; }
+
+bool Usuario::fotoTieneLike(int idFoto) const { return fotosConLike.existe(idFoto); }/*Identificadores de las fotos
+                                                                                    que el usuario ha dado like*/
+void Usuario::agregarLike(int idFoto) { if (!fotosConLike.existe(idFoto)) fotosConLike.agregar(idFoto); }
+void Usuario::quitarLike(int idFoto) { fotosConLike.eliminarL(idFoto); }
+const ListaEnteros &Usuario::getFotosConLike() const { return fotosConLike; }
+
+void Usuario::agregarAlbum(Album *album) { albumes.agregar(album); }
+int Usuario::cantidadAlbumes() const { return albumes.tamano(); }
+Album *Usuario::obtenerAlbum(int posicion) const { return albumes.obtener(posicion); }
