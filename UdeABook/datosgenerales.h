@@ -124,4 +124,174 @@ public:
     }
 };
 
+//Lista dinámica para numeros enteros
+class ListaEnteros {
+
+private:
+    int *datos;
+    int cantidad; //Cantidad valores almacenados
+    int capacidad;//Capacidad de almacenamiento
+    void ampliar();//Ampliar la capacidad
+public:
+    ListaEnteros();
+    ~ListaEnteros();
+
+    void agregar(int valor);//Insertar valor
+    bool existe(int valor) const; //Verifica si un valor existe
+    void eliminar(int valor);//Elimina un valor de la lista
+    int obtener(int posicion) const;//Consultar el entero en una posición
+    int tamano() const;//Cantidad de elementos.
+};
+
+//Representa las amistades con matriz de adyacencia (si dos usuarios están conectados)
+class MatrizAdyacencia {
+private:
+    unsigned char *datos;//Apuntador a la memoria donde se almacena la representación de la matriz
+    int n;//Dimensiones de la matriz
+public:
+    MatrizAdyacencia();
+    ~MatrizAdyacencia();
+
+    void crear(int cantidadUsuarios);//Cantidad de usuarios a representar
+    void hacerAmigo(int a, int b);//Registra relación de amistad entre los usuarios
+    bool amistad(int a, int b) const;//Consultar si los usuarios son amigos
+    int cantidadComun(int a, int b) const;//Cantidad de amigos en comun
+    int cantidadAmigos(int a) const;//Cantidad de amigos de un usuario
+    int tamano() const;//Tamaño actual de la matriz
+};
+
+//Registro de mensajes enviados
+class Mensaje {
+private:
+    int id;//identificador del mensaje
+    int emisor;//identificador de usuario que envió mensaje
+    int receptor;//identificador de usuario que recibe mensaje
+    char *fecha;
+    bool leido;//Verificacion de mensaje leido o no
+    char *texto;//Puntero a cadena que contiene el mensaje
+public:
+    Mensaje(int id, int emisor, int receptor, const char *fecha, bool leido, const char *texto);
+    ~Mensaje();
+    int getId() const;//Devuelve el identificador del mensaje
+    int getEmisor() const;
+    int getReceptor() const;
+    const char *getFecha() const;
+    const char *getTexto() const;
+    bool estaLeido() const;//'True' para estado de lectura: leido
+    void marcarLeido();//Actualiza el estado de lectura del mensaje
+};
+
+//Representa de las fotos almacenadas
+class Foto {
+private:
+    int id;//Identificador de la foto
+    char *nombre;//Nombre de la foto
+    char *fechaCaptura;//Fecha en la que se tomó la foto
+    long long tamano;//Tamaño de la foto
+    char *ruta;//Ubicación del archivo foto
+    int likes;//Cantidad de likes registrados
+public:
+    Foto(int id, const char *nombre, const char *fechaCaptura, long long tamano, const char *ruta, int likes);//Constructor
+    ~Foto();
+    int getId() const;
+    const char *getNombre() const;
+    const char *getFecha() const;
+    long long getTamano() const;
+    const char *getRuta() const;
+    int getLikes() const;
+    void cambiarLike(bool agregar);//Modificar contador de likes
+};
+
+//Tipo enumerado para representar las opciones de privacidad de los alnumes
+enum PrivacidadAlbum {
+    PUBLICO = 0,
+    PRIVADO = 1,
+    AMIGOS = 2
+};
+
+//Representa los albumes almacenados
+class Album {
+private:
+    int id;//Identificador del album
+    int propietario;//Identificador del usuario propietario del album
+    char *nombre;//Nombre del album
+    char *ruta;//Ruta de almacenamiento
+    PrivacidadAlbum privacidad;//Configuración de privacidad del album
+    ListaDinamica<Foto> fotos;
+public:
+    Album(int id, int propietario, const char *nombre, const char *ruta, PrivacidadAlbum privacidad);
+    ~Album();
+    int getId() const;
+    int getPropietario() const;
+    const char *getNombre() const;
+    const char *getRuta() const;
+    PrivacidadAlbum getPrivacidadAlbum() const;
+    void agregarFoto(Foto *foto);//Agregar foto al album.
+    int cantidadFotos() const;//Cantidad de fotos en el album
+    Foto *obtenerFoto(int posicion) const;
+};
+
+//Solicitudes de amistad entre dos usuarios
+class Solicitud {
+private:
+    int emisor;//Identificador del usuario que envía la solicitud
+    int receptor;//Identificador del usuario al que se envia la solicitud
+public:
+    Solicitud(int emisor, int receptor);
+    int getEmisor() const;
+    int getReceptor() const;
+};
+
+//Recomendacion de amistad
+class SugerenciaAmistad {
+private:
+    int usuarioId;//Identificador del usuario que se esta recomendando
+    int comunes;//Cantidad de amigos que el usuario actual tiene en común con el usuario sugerido
+public:
+    SugerenciaAmistad(int usuarioId, int comunes);
+    int getUsuarioId() const;
+    int getComunes() const;
+};
+
+//Informacion de usuarios
+class Usuario {
+private:
+    int id;//Identificador del usuario
+    char *nombre;//Nombre del usuario
+    char *clave;//Clave asociada a la cuenta
+    char *rutaPerfil;//Ruta asociada al perfil
+    ListaEnteros amigos;//Identificadores de los usuarios que son amigos de este usuario
+    ListaEnteros enviados;//Identificadores de los mensajes enviados por el usuario
+    ListaEnteros recibidos;//Identificadores de los mensajes recibidos por el usuario
+    ListaEnteros fotosConLike;//Identificadores de las fotos a las que ha dado like
+    ListaDinamica<Album> albumes;//Albumes del usuario
+public:
+    Usuario(int id, const char *nombre, const char *clave, const char *rutaPerfil);
+    ~Usuario();
+
+    int getId() const;
+    const char *getNombre() const;
+    const char *getClave() const;
+    const char *getRutaPerfil() const;
+    int cantidadAmigos() const;//Cantidad de amigos registrados
+
+    void agregarAmigo(int idAmigo);//Agrega el identificador de un usuario a la lista de amigos
+    bool esAmigo(int idAmigo) const;//Comprueba si un identificador esta en la lista de amigos
+    void quitarAmigo(int idAmigo);//Eliminr amigo de la lista
+    int obtenerAmigo(int posicion) const;//Identificador del amigo que se encuentra en una posición determinada
+    void agregarEnviado(int idMensaje);//Agrega el identificador de un mensaje a lista de mensajes enviados
+    void agregarRecibido(int idMensaje);//Agrega el identificador de un mensaje a lista de mensajes recibidos
+    const ListaEnteros &getEnviados() const;//Devuelve una referencia constante a la lista de mensajes enviados
+    const ListaEnteros &getRecibidos() const;
+
+    bool fotoTieneLike(int idFoto) const;//Verificar si el usuario ha dado like a una foto
+    void agregarLike(int idFoto);//Agrega like a una foto
+    void quitarLike(int idFoto);//Elimina el registro de like asociado a una foto
+    const ListaEnteros &getFotosConLike() const;//Consultar la lista de fotos a las que el usuario ha dado like
+
+    void agregarAlbum(Album *album);//Agregar álbum a la coleccion
+    int cantidadAlbumes() const;//Cantidad de albumes del usuario
+    Album *obtenerAlbum(int posicion) const;//Acceder a un album específico de la lista del usuario
+};
+
 #endif // DATOSGENERALES_H
