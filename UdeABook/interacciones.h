@@ -1,10 +1,9 @@
 #ifndef INTERACCIONES_H
 #define INTERACCIONES_H
 
-class Interacciones
-{
-public:
-    Interacciones();
-};
+class GestorArchivos;
+
+class RedSocial;
+
 
 #endif // INTERACCIONES_H

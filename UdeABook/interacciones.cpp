@@ -1,3 +1,3 @@
 #include "interacciones.h"
+#include "gestorarchivos.h"
 
-Interacciones::Interacciones() {}
