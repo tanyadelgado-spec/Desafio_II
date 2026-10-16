@@ -5,8 +5,7 @@
 #include <cstdio>
 #include <fstream>
 
-#include "interacciones.h"
-#include "datosgenerales.h"
+#include "funcionalidades.h"
 
 //Recuperar datos almacenados y escribirlos en archivos
 class GestorArchivos{

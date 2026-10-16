@@ -4,12 +4,10 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-        datosgenerales.cpp \
+        funcionalidades.cpp \
         gestorarchivos.cpp \
-        interacciones.cpp \
         main.cpp
 
 HEADERS += \
-    datosgenerales.h \
-    gestorarchivos.h \
-    interacciones.h
+    funcionalidades.h \
+    gestorarchivos.h

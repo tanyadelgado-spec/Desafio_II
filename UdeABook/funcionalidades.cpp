@@ -1,4 +1,4 @@
-#include "datosgenerales.h"
+#include "funcionalidades.h"
 
 //Inicializacion de atributos estáticos
 long long Memoria::bytes = 0;

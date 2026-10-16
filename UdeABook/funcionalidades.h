@@ -1,5 +1,5 @@
-#ifndef DATOSGENERALES_H
-#define DATOSGENERALES_H
+#ifndef FUNCIONALIDADES_H
+#define FUNCIONALIDADES_H
 
 #include <iostream>
 #include <cstring>
@@ -295,4 +295,48 @@ public:
     Album *obtenerAlbum(int posicion) const;//Acceder a un album específico de la lista del usuario
 };
 
-#endif // DATOSGENERALES_H
+class GestorArchivos;
+
+//Coordinar el funcionamiento general de la red social
+class RedSocial {
+    friend class GestorArchivos;//Los métodos de GestorArchivos pueden acceder a los miembros privados de RedSocial
+private:
+    ListaDinamica<Usuario> usuarios;
+    ListaDinamica<Mensaje> mensajes;
+    ListaDinamica<Solicitud> solicitudes;
+    MatrizAdyacencia matriz;
+    int siguienteMensaje;//Identificador para el siguiente mensaje que se cree
+
+    Usuario *buscarIdUsuario(int id) const; //Busca un usuario a partir de su identificador
+    void mostrarPerfilAmigo(Usuario *actual, Usuario *amigo);
+    bool verificarSolicitud(int emisor, int receptor) const;//Si existe una solicitud entre dos usuarios
+    void ordenarMensajesFecha(Mensaje **lista, int cantidad) const;
+
+public:
+    RedSocial();
+    ~RedSocial();
+
+    //Metodos de GestorArchivos
+    bool cargarDatos(const char *carpeta);
+    bool guardarDatos(const char *carpeta) const;
+
+    //Localizar cuentas registradas y comprobar credenciales
+    Usuario *buscarUsuario(const char *nombre) const;
+    Usuario *autenticar(const char *nombre, const char *clave) const;
+
+    //Interación en la red social
+    void mostrarMejoresAmigos(Usuario *actual);
+    void administrarAmistades(Usuario *actual);
+    void visitarPerfil(Usuario *actual);
+    void sugerenciasAmistad(Usuario *actual, int t);
+    void administrarMensajes(Usuario *actual);
+    bool enviarMensaje(Usuario *actual, const char *destino, const char *texto);
+
+    bool enviarSolicitud(Usuario *actual, const char *destino);
+    bool aceptarSolicitud(Usuario *actual, int posicionListaU);
+    bool rechazarSolicitud(Usuario *actual, int posicionListaU);
+
+    int cantidadUsuarios() const;//Cantidad de usuarios registrados (Lista Usuarios)
+};
+
+#endif // FUNCIONALIDADES_H
