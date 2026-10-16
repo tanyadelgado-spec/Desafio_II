@@ -1,4 +1,5 @@
 #include "funcionalidades.h"
+#include "gestorarchivos.h"
 
 //Inicializacion de atributos estáticos
 long long Memoria::bytes = 0;
@@ -257,3 +258,200 @@ const ListaEnteros &Usuario::getFotosConLike() const { return fotosConLike; }
 void Usuario::agregarAlbum(Album *album) { albumes.agregar(album); }
 int Usuario::cantidadAlbumes() const { return albumes.tamano(); }
 Album *Usuario::obtenerAlbum(int posicion) const { return albumes.obtener(posicion); }
+
+RedSocial::RedSocial() : siguienteMensaje(1) {}
+RedSocial::~RedSocial() {}
+
+bool RedSocial::cargarDatos(const char *carpeta) {
+    return GestorArchivos::cargar(*this, carpeta);
+}
+
+bool RedSocial::guardarDatos(const char *carpeta) const {
+    return GestorArchivos::guardar(*this, carpeta);
+}
+
+Usuario *RedSocial::buscarIdUsuario(int id) const {
+    for (int i = 0; i < usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = usuarios.obtener(i);
+        if (u->getId() == id) return u;
+    }
+    return 0;
+}
+
+Usuario *RedSocial::buscarUsuario(const char *nombre) const {
+    for (int i = 0; i < usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = usuarios.obtener(i);
+        if (strcmp(u->getNombre(), nombre) == 0) return u;
+    }
+    return 0;
+}
+
+Usuario *RedSocial::autenticar(const char *nombre, const char *clave) const {
+    Usuario *u = buscarUsuario(nombre);
+    if (u != 0 && strcmp(u->getClave(), clave) == 0) return u;
+    return 0;
+}
+
+int RedSocial::cantidadUsuarios() const { return usuarios.tamano(); }
+
+bool RedSocial::verificarSolicitud(int emisor, int receptor) const {
+    for (int i = 0; i < solicitudes.tamano(); i++) {
+        Metricas::iterar();
+        Solicitud *s = solicitudes.obtener(i);
+        if ((s->getEmisor() == emisor && s->getReceptor() == receptor) ||
+            (s->getEmisor() == receptor && s->getReceptor() == emisor)) return true;
+    }
+    return false;
+}
+
+bool RedSocial::enviarSolicitud(Usuario *actual, const char *destino) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(destino) + sizeof(actual);
+    Usuario *u = buscarUsuario(destino);
+
+    if (u == 0 || u == actual || actual->esAmigo(u->getId()) || verificarSolicitud(actual->getId(), u->getId())) {
+        Metricas::mostrar("Enviar solicitud", memoriaLocal);
+        return false;
+    }
+    solicitudes.agregar(new Solicitud(actual->getId(), u->getId()));
+    Metricas::mostrar("Enviar solicitud", memoriaLocal);
+    return true;
+}
+
+bool RedSocial::aceptarSolicitud(Usuario *actual, int posicionListaU) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(posicionListaU) + sizeof(actual);
+    int contador = 0;
+
+    for (int i = 0; i < solicitudes.tamano(); i++) {
+        Metricas::iterar();
+        Solicitud *s = solicitudes.obtener(i);
+        if (s->getReceptor() == actual->getId()) {
+            if (contador == posicionListaU) {
+                Usuario *emisor = buscarIdUsuario(s->getEmisor());
+                if (emisor != 0) {
+                    actual->agregarAmigo(emisor->getId());
+                    emisor->agregarAmigo(actual->getId());
+                    int posA = 0;
+                    int posB = 0;
+                    for (int j = 0; j < usuarios.tamano(); j++) {
+                        Metricas::iterar();
+                        if (usuarios.obtener(j)->getId() == actual->getId()) posA = j;
+                        if (usuarios.obtener(j)->getId() == emisor->getId()) posB = j;
+                    }
+                    matriz.hacerAmigo(posA, posB);
+                    solicitudes.eliminar(i);
+                    Metricas::mostrar("Aceptar solicitud", memoriaLocal);
+                    return true;
+                }
+            }
+            contador++;
+        }
+    }
+    Metricas::mostrar("Aceptar solicitud", memoriaLocal);
+    return false;
+}
+
+bool RedSocial::rechazarSolicitud(Usuario *actual, int posicionListaU) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(posicionListaU) + sizeof(actual);
+    int contador = 0;
+    for (int i = 0; i < solicitudes.tamano(); i++) {
+        Metricas::iterar();
+        Solicitud *s = solicitudes.obtener(i);
+        if (s->getReceptor() == actual->getId()) {
+            if (contador == posicionListaU) {
+                solicitudes.eliminar(i);
+                Metricas::mostrar("Rechazar solicitud", memoriaLocal);
+                return true;
+            }
+            contador++;
+        }
+    }
+    Metricas::mostrar("Rechazar solicitud", memoriaLocal);
+    return false;
+}
+
+void RedSocial::administrarAmistades(Usuario *actual) {
+    int opcion = 0;
+
+    do {
+        cout << "\n_-_-_-_-_-Administrar Amistades-_-_-_-_-_\n";
+        cout << "1. Enviar solicitud de amistad\n";
+        cout << "2. Aceptar solicitudes de amistad\n";
+        cout << "3. Rechazar solicitud de amistad\n";
+        cout << "4. Regresar\n";
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+
+        switch (opcion) {
+        case 1:{
+            char nombre[128];
+            cout << "Nombre de usuario: ";
+            cin >> nombre;
+            if (enviarSolicitud(actual, nombre)) { cout << "Solicitud enviada.\n";}
+            else { cout << "No fue posible enviar la solicitud, intente de nuevo.\n";}
+            break;
+        }
+
+        case 2:{
+            Metricas::reiniciar();
+            int cantidad = 0;
+            cout << "\n_-_-_-Solicitudes Recibidas-_-_-_\n";
+            for (int i = 0; i < solicitudes.tamano(); i++) {
+                Metricas::iterar();
+                Solicitud *s = solicitudes.obtener(i);
+                if (s->getReceptor() == actual->getId()) {
+                    Usuario *u = buscarIdUsuario(s->getEmisor());
+                    cout << cantidad << ". " << (u ? u->getNombre() : "desconocido") << "\n";
+                    cantidad++;
+                }
+            }
+            int pos;
+            cout << "Ingrese la posicion de la solicitud o '-1' para regresar: ";
+            cin >> pos;
+            if (pos >= 0) {
+                if (aceptarSolicitud(actual, pos)) { cout << "Solicitud aceptada.\n";}
+                else { cout << "Posicion invalida.\n";};
+            } else {
+                Metricas::mostrar("Lista solicitudes", sizeof(pos) + sizeof(cantidad));
+            }
+            break;
+        }
+
+        case 3:{
+            Metricas::reiniciar();
+            int cantidad = 0;
+            cout << "\n_-_-_-Solicitudes Recibidas-_-_-_\n";
+            for (int i = 0; i < solicitudes.tamano(); i++) {
+                Metricas::iterar();
+                Solicitud *s = solicitudes.obtener(i);
+                if (s->getReceptor() == actual->getId()) {
+                    Usuario *u = buscarIdUsuario(s->getEmisor());
+                    cout << cantidad << ". " << (u ? u->getNombre() : "desconocido") << "\n";
+                    cantidad++;
+                }
+            }
+            int pos;
+            cout << "Ingrese la posicion de la solicitud o '-1' para regresar: ";
+            cin >> pos;
+            if (pos >= 0) {
+                if (rechazarSolicitud(actual, pos)) { cout << "Solicitud rechazada.\n";}
+                else { cout << "Posicion invalida.\n";}
+            } else {
+                Metricas::mostrar("Lista solicitudes", sizeof(pos) + sizeof(cantidad));
+            }
+            break;
+        }
+
+        case 4:
+            break;
+
+        default:
+            cout << "Opcion invalida. Intente nuevamente.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
