@@ -455,3 +455,183 @@ void RedSocial::administrarAmistades(Usuario *actual) {
         }
     } while (opcion != 4);
 }
+
+static int prioridadComunes(int comunes) {
+    if (comunes <= 10) return 10;
+    if (comunes <= 20) return 25;
+    return 35;
+}
+
+static int elegirPonderado(int *prioridades, int cantidad) {
+    if (cantidad <= 0) return -1;
+    int total = 0;
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        total += prioridades[i];
+    }
+    Metricas::externa();
+    int aleatorio = rand() % total;
+    int acumulado = 0;
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        acumulado += prioridades[i];
+        if (aleatorio < acumulado) return i;
+    }
+    return cantidad - 1;
+}
+
+void RedSocial::mostrarMejoresAmigos(Usuario *actual) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(actual);
+    int cantidad = actual->cantidadAmigos();
+
+    if (cantidad == 0) {
+        cout << "No tiene lista de amigos para mostrar.\n";
+        Metricas::mostrar("Mostrar fotos de amigos", memoriaLocal);
+        return;
+    }
+
+    int maximo = cantidad < 3 ? cantidad : 3;
+    int *ids = new int[cantidad];
+    int *prioridades = new int[cantidad];
+    int *primerGrupo = new int[maximo];
+    Memoria::reservar(sizeof(int) * cantidad * 2 + sizeof(int) * maximo);
+
+    //Lista de amigos y prioridad segun los amigos en comun
+    int posActual = -1;
+    for (int i = 0; i < usuarios.tamano(); i++) {
+        Metricas::iterar();
+        if (usuarios.obtener(i)->getId() == actual->getId()) posActual = i;
+    }
+
+    int cantidadCandidatos = 0;
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        int idAmigo = actual->obtenerAmigo(i);
+        ids[cantidadCandidatos] = idAmigo;
+
+        int posAmigo = -1;
+        for (int j = 0; j < usuarios.tamano(); j++) {
+            Metricas::iterar();
+            if (usuarios.obtener(j)->getId() == idAmigo) posAmigo = j;
+        }
+        int comunes = (posActual >= 0 && posAmigo >= 0) ? matriz.cantidadComun(posActual, posAmigo) : 0;
+        prioridades[cantidadCandidatos] = prioridadComunes(comunes);
+        cantidadCandidatos++;
+    }
+
+    //Ponderado, sin repeticiones
+    for (int s = 0; s < maximo; s++) {
+        int disponibles = cantidadCandidatos - s;
+        int *idsTemp = new int[disponibles];
+        int *prioridadesTemp = new int[disponibles];
+        Memoria::reservar(sizeof(int) * disponibles * 2);
+        int p = 0;
+
+        for (int i = 0; i < cantidadCandidatos; i++) {
+            Metricas::iterar();
+            bool usado = false;
+            for (int j = 0; j < s; j++) {
+                Metricas::iterar();
+                if (primerGrupo[j] == ids[i]) usado = true;
+            }
+            if (!usado) {
+                idsTemp[p] = ids[i];
+                prioridadesTemp[p] = prioridades[i];
+                p++;
+            }
+        }
+
+        int elegido = elegirPonderado(prioridadesTemp, p);
+        primerGrupo[s] = idsTemp[elegido];
+        delete[] idsTemp;
+        delete[] prioridadesTemp;
+        Memoria::liberar(sizeof(int) * disponibles * 2);
+    }
+
+    cout << "\n_-_-_-_-_-_-Amigos Destacados-_-_-_-_-_-_\n";
+    for (int i = 0; i < maximo; i++) {
+        Metricas::iterar();
+        Usuario *u = buscarIdUsuario(primerGrupo[i]);
+        if (u != 0) {
+            cout << "Amigo " << (i + 1) << ": " << u->getNombre() << "\n";
+            cout << "Foto de perfil: " << u->getRutaPerfil() << "\n";
+        }
+    }
+
+    //Otro grupo de 3 distintos (min. 6 amigos)
+    if (cantidad >= 6 && maximo == 3) {
+        int op;
+        cout << "\n1. Actualizar fotos\n2. Continuar\n";
+        cout << "Ingrese una opción: ";
+        cin >> op;
+        if (op == 1) {
+            int *segundoGrupo = new int[3];
+            Memoria::reservar(sizeof(int) * 3);
+
+            for (int s = 0; s < 3; s++) {
+                int disponibles = 0;
+                for (int i = 0; i < cantidadCandidatos; i++) {
+                    Metricas::iterar();
+                    bool prohibido = false;
+                    for (int j = 0; j < 3; j++) {
+                        Metricas::iterar();
+                        if (primerGrupo[j] == ids[i]) prohibido = true;
+                    }
+                    for (int j = 0; j < s; j++) {
+                        Metricas::iterar();
+                        if (segundoGrupo[j] == ids[i]) prohibido = true;
+                    }
+                    if (!prohibido) disponibles++;
+                }
+
+                int *idsTemp = new int[disponibles];
+                int *prioridadesTemp = new int[disponibles];
+                Memoria::reservar(sizeof(int) * disponibles * 2);
+                int p = 0;
+                for (int i = 0; i < cantidadCandidatos; i++) {
+                    Metricas::iterar();
+                    bool prohibido = false;
+                    for (int j = 0; j < 3; j++) {
+                        Metricas::iterar();
+                        if (primerGrupo[j] == ids[i]) prohibido = true;
+                    }
+                    for (int j = 0; j < s; j++) {
+                        Metricas::iterar();
+                        if (segundoGrupo[j] == ids[i]) prohibido = true;
+                    }
+                    if (!prohibido) {
+                        idsTemp[p] = ids[i];
+                        prioridadesTemp[p] = prioridades[i];
+                        p++;
+                    }
+                }
+                int elegido = elegirPonderado(prioridadesTemp, p);
+                segundoGrupo[s] = idsTemp[elegido];
+                delete[] idsTemp;
+                delete[] prioridadesTemp;
+                Memoria::liberar(sizeof(int) * disponibles * 2);
+            }
+
+            cout << "\n_-_-_-Nuevo Grupo de Amigos Destacados-_-_-_\n";
+            for (int i = 0; i < 3; i++) {
+                Metricas::iterar();
+                Usuario *u = buscarIdUsuario(segundoGrupo[i]);
+                if (u != 0) {
+                    cout << "Amigo " << (i + 1) << ": " << u->getNombre() << "\n";
+                    cout << "Foto de perfil: " << u->getRutaPerfil() << "\n";
+                }
+            }
+            delete[] segundoGrupo;
+            Memoria::liberar(sizeof(int) * 3);
+        }
+    } else if (cantidad < 6) {
+        cout << "\nNo es posible actualizar la lista con amigos diferentes, ya que tiene menos de 6 amigos.\n";
+    }
+
+    delete[] ids;
+    delete[] prioridades;
+    delete[] primerGrupo;
+    Memoria::liberar(sizeof(int) * cantidad * 2 + sizeof(int) * maximo);
+    Metricas::mostrar("Mostrar fotos de amigos", memoriaLocal);
+}
