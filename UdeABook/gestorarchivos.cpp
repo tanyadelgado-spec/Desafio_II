@@ -193,3 +193,108 @@ bool GestorArchivos::cargar(RedSocial &red, const char *carpeta) {
     }
     return true;
 }
+
+bool GestorArchivos::guardar(const RedSocial &red, const char *carpeta) {
+    char ruta[512];
+
+    rutaArchivo(carpeta, "usuarios.txt", ruta, 512);
+    ofstream usuarios(ruta);
+    if (!usuarios) return false;
+    usuarios << "# id|usuario|clave|rutaPerfil\n";
+    for (int i = 0; i < red.usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = red.usuarios.obtener(i);
+        usuarios << u->getId() << "|" << u->getNombre() << "|" << u->getClave() << "|" << u->getRutaPerfil() << "\n";
+    }
+    usuarios.close();
+
+    rutaArchivo(carpeta, "amistades.txt", ruta, 512);
+    ofstream amistades(ruta);
+    if (!amistades) return false;
+    amistades << "# idUsuario1|idUsuario2\n";
+    for (int i = 0; i < red.usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = red.usuarios.obtener(i);
+        for (int j = 0; j < u->cantidadAmigos(); j++) {
+            Metricas::iterar();
+            int idAmigo = u->obtenerAmigo(j);
+            if (u->getId() < idAmigo) amistades << u->getId() << "|" << idAmigo << "\n";
+        }
+    }
+    amistades.close();
+
+    rutaArchivo(carpeta, "albumes.txt", ruta, 512);
+    ofstream albumes(ruta);
+    if (!albumes) return false;
+    albumes << "# idAlbum|propietario|nombre|ruta|privacidadAlbum(0 publico,1 privado,2 amigos)\n";
+    for (int i = 0; i < red.usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = red.usuarios.obtener(i);
+        for (int j = 0; j < u->cantidadAlbumes(); j++) {
+            Metricas::iterar();
+            Album *a = u->obtenerAlbum(j);
+            albumes << a->getId() << "|" << a->getPropietario() << "|" << a->getNombre() << "|"
+                    << a->getRuta() << "|" << (int)a->getPrivacidadAlbum() << "\n";
+        }
+    }
+    albumes.close();
+
+    rutaArchivo(carpeta, "fotos.txt", ruta, 512);
+    ofstream fotos(ruta);
+    if (!fotos) return false;
+    fotos << "# idFoto|idAlbum|nombre|fecha|tamano|ruta|likes\n";
+    for (int i = 0; i < red.usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = red.usuarios.obtener(i);
+        for (int j = 0; j < u->cantidadAlbumes(); j++) {
+            Metricas::iterar();
+            Album *a = u->obtenerAlbum(j);
+            for (int k = 0; k < a->cantidadFotos(); k++) {
+                Metricas::iterar();
+                Foto *f = a->obtenerFoto(k);
+                fotos << f->getId() << "|" << a->getId() << "|" << f->getNombre() << "|"
+                      << f->getFecha() << "|" << f->getTamano() << "|" << f->getRuta() << "|" << f->getLikes() << "\n";
+            }
+        }
+    }
+    fotos.close();
+
+    rutaArchivo(carpeta, "mensajes.txt", ruta, 512);
+    ofstream mensajes(ruta);
+    if (!mensajes) return false;
+    mensajes << "# id|emisor|receptor|fecha|leido|texto\n";
+    for (int i = 0; i < red.mensajes.tamano(); i++) {
+        Metricas::iterar();
+        Mensaje *m = red.mensajes.obtener(i);
+        mensajes << m->getId() << "|" << m->getEmisor() << "|" << m->getReceptor() << "|"
+                 << m->getFecha() << "|" << (m->estaLeido() ? 1 : 0) << "|" << m->getTexto() << "\n";
+    }
+    mensajes.close();
+
+    rutaArchivo(carpeta, "likes.txt", ruta, 512);
+    ofstream likes(ruta);
+    if (!likes) return false;
+    likes << "# idUsuario|idFoto\n";
+    for (int i = 0; i < red.usuarios.tamano(); i++) {
+        Metricas::iterar();
+        Usuario *u = red.usuarios.obtener(i);
+        for (int j = 0; j < u->getFotosConLike().tamano(); j++) {
+            Metricas::iterar();
+            likes << u->getId() << "|" << u->getFotosConLike().obtener(j) << "\n";
+        }
+    }
+    likes.close();
+
+    rutaArchivo(carpeta, "solicitudes.txt", ruta, 512);
+    ofstream solicitudes(ruta);
+    if (!solicitudes) return false;
+    solicitudes << "# emisor|receptor\n";
+    for (int i = 0; i < red.solicitudes.tamano(); i++) {
+        Metricas::iterar();
+        Solicitud *s = red.solicitudes.obtener(i);
+        solicitudes << s->getEmisor() << "|" << s->getReceptor() << "\n";
+    }
+    solicitudes.close();
+
+    return true;
+}
