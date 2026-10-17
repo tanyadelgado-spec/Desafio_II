@@ -810,3 +810,134 @@ void RedSocial::sugerenciasAmistad(Usuario *actual, int k) {
     Memoria::liberar(sizeof(int) * (max > 0 ? max : 1) * 2);
     Metricas::mostrar("Sugerencias de amistad", memoriaLocal);
 }
+
+static int compararFecha(const char *a, const char *b) { return strcmp(a, b); }
+
+void RedSocial::ordenarMensajesFecha(Mensaje **lista, int cantidad) const {
+    for (int i = 0; i < cantidad - 1; i++) {
+        for (int j = i + 1; j < cantidad; j++) {
+            Metricas::iterar();
+            if (compararFecha(lista[j]->getFecha(), lista[i]->getFecha()) < 0) {
+                Mensaje *temp = lista[i];
+                lista[i] = lista[j];
+                lista[j] = temp;
+            }
+        }
+    }
+}
+
+bool RedSocial::enviarMensaje(Usuario *actual, const char *destino, const char *texto) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(actual) + sizeof(destino) + sizeof(texto);
+    Usuario *u = buscarUsuario(destino);
+    if (u == 0 || !actual->esAmigo(u->getId()) || strlen(texto) > 512) {
+        Metricas::mostrar("Enviar mensaje", memoriaLocal);
+        return false;
+    }
+
+    char fecha[32];
+    time_t ahora = time(0);
+    tm *t = localtime(&ahora);
+    Metricas::externa();
+    sprintf(fecha, "%04d%02d%02d%02d%02d%02d", t->tm_year + 1900, t->tm_mon + 1,
+            t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+
+    Mensaje *m = new Mensaje(siguienteMensaje++, actual->getId(), u->getId(), fecha, false, texto);
+    mensajes.agregar(m);
+    actual->agregarEnviado(m->getId());
+    u->agregarRecibido(m->getId());
+    Metricas::mostrar("Enviar mensaje", memoriaLocal + sizeof(fecha));
+    return true;
+}
+
+void RedSocial::administrarMensajes(Usuario *actual) {
+    int opcion;
+    do {
+        cout << "\n_-_-_-_-Administrar Mensajes_-_-_-_-\n";
+        cout << "1. Enviar mensaje\n2. Leer nuevos mensajes\n3. Buscar por rango de fecha\n4. Regresar\n";
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+        cin.ignore(10000, '\n');
+
+        switch (opcion) {
+        case 1:{
+            char destino[128];
+            char texto[513];
+
+            cout << "Nombre del amigo: "; cin >> destino;
+            cin.ignore(10000, '\n');
+            cout << "Mensaje (maximo 512 caracteres): ";
+            cin.getline(texto, 513);
+
+            if (enviarMensaje(actual, destino, texto)) cout << "Mensaje enviado.\n";
+            else cout << "No fue posible enviar el mensaje.\n";
+            break;
+        }
+
+        case 2:{
+            Metricas::reiniciar();
+            int cantidad = 0;
+            for (int i = 0; i < actual->getRecibidos().tamano(); i++) {
+                Metricas::iterar();
+                int id = actual->getRecibidos().obtener(i);
+                for (int j = 0; j < mensajes.tamano(); j++) {
+                    Metricas::iterar();
+                    Mensaje *m = mensajes.obtener(j);
+                    if (m->getId() == id && !m->estaLeido()) cantidad++;
+                }
+            }
+            Mensaje **lista = new Mensaje*[cantidad > 0 ? cantidad : 1];
+            Memoria::reservar(sizeof(Mensaje*) * (cantidad > 0 ? cantidad : 1));
+
+            int p = 0;
+            for (int i = 0; i < mensajes.tamano(); i++) {
+                Metricas::iterar();
+                Mensaje *m = mensajes.obtener(i);
+                if (m->getReceptor() == actual->getId() && !m->estaLeido()) lista[p++] = m;
+            }
+            ordenarMensajesFecha(lista, p);
+            for (int i = 0; i < p; i++) {
+                Metricas::iterar();
+                Usuario *emisor = buscarIdUsuario(lista[i]->getEmisor());
+                cout << "\nDe: " << (emisor ? emisor->getNombre() : "desconocido")
+                     << " || Fecha: " << lista[i]->getFecha() << "\n";
+                cout << lista[i]->getTexto() << "\n";
+                lista[i]->marcarLeido();
+            }
+            delete[] lista;
+
+            Memoria::liberar(sizeof(Mensaje*) * (cantidad > 0 ? cantidad : 1));
+            Metricas::mostrar("Leer nuevos mensajes", sizeof(opcion) + sizeof(cantidad));
+            break;
+        }
+
+        case 3:{
+            Metricas::reiniciar();
+            char inicio[32], fin[32];
+            cout << "Fecha inicial (formato: AAAAMMDDHHMMSS): "; cin >> inicio;
+            cout << "Fecha final (formato: AAAAMMDDHHMMSS): "; cin >> fin;
+            cout << "\nMensajes encontrados en el rango:\n";
+            for (int i = 0; i < mensajes.tamano(); i++) {
+                Metricas::iterar();
+                Mensaje *m = mensajes.obtener(i);
+                if (m->getReceptor() == actual->getId() &&
+                    strcmp(m->getFecha(), inicio) >= 0 && strcmp(m->getFecha(), fin) <= 0) {
+                    Usuario *emisor = buscarIdUsuario(m->getEmisor());
+                    cout << "\nDe: " << (emisor ? emisor->getNombre() : "desconocido")
+                         << " || Fecha: " << m->getFecha() << "\n";
+                    cout << m->getTexto() << "\n";
+                }
+            }
+            Metricas::mostrar("Buscar mensajes por fecha", sizeof(inicio) + sizeof(fin) + sizeof(opcion));
+            break;
+        }
+
+        case 4:
+            break;
+
+        default:
+            cout << "Opcion invalida. Intente de nuevo.\n";
+            break;
+        }
+    } while (opcion != 4);
+}
