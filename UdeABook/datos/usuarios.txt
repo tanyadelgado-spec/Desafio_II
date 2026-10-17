@@ -1,0 +1,13 @@
+# id|usuario|clave|rutaPerfil
+1|tanya|1234|/users/base/tanya/albums/profile.png
+2|ana|1111|/users/base/ana/albums/profile.png
+3|bruno|2222|/users/base/bruno/albums/profile.png
+4|carla|3333|/users/base/carla/albums/profile.png
+5|diego|4444|/users/base/diego/albums/profile.png
+6|elena|5555|/users/base/elena/albums/profile.png
+7|felipe|6666|/users/base/felipe/albums/profile.png
+8|gabriel|7777|/users/base/gabriel/albums/profile.png
+9|laura|8888|/users/base/laura/albums/profile.png
+10|camila|3648|/users/base/camila/albums/profile.png
+11|sergio|8846|/users/base/sergio/albums/profile.png
+12|luis|7589|/users/base/luis/albums/profile.png
