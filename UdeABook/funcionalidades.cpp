@@ -435,7 +435,7 @@ void RedSocial::administrarAmistades(Usuario *actual) {
                 }
             }
             int pos;
-            cout << "Ingrese la posicion de la solicitud o '-1' para regresar: ";
+            cout << "Ingrese la posicion de la solicitud o -1 para regresar: ";
             cin >> pos;
             if (pos >= 0) {
                 if (rechazarSolicitud(actual, pos)) { cout << "Solicitud rechazada.\n";}
@@ -634,4 +634,179 @@ void RedSocial::mostrarMejoresAmigos(Usuario *actual) {
     delete[] primerGrupo;
     Memoria::liberar(sizeof(int) * cantidad * 2 + sizeof(int) * maximo);
     Metricas::mostrar("Mostrar fotos de amigos", memoriaLocal);
+}
+
+void RedSocial::visitarPerfil(Usuario *actual) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(actual);
+    char nombre[128];
+    cout << "Nombre de usuario del amigo: ";
+    cin >> nombre;
+    Usuario *amigo = buscarUsuario(nombre);
+    if (amigo == 0 || !actual->esAmigo(amigo->getId())) {
+        cout << "El usuario no existe o no esta en la lista de amigos.\n";
+        Metricas::mostrar("Visitar perfil", memoriaLocal + sizeof(nombre));
+        return;
+    }
+
+    cout << "\nPerfil de " << amigo->getNombre() << "\n";
+    int disponibles = 0;
+    for (int i = 0; i < amigo->cantidadAlbumes(); i++) {
+        Metricas::iterar();
+        Album *a = amigo->obtenerAlbum(i);
+        if (a->getPrivacidadAlbum() == PUBLICO || a->getPrivacidadAlbum() == AMIGOS) {
+            cout << disponibles << ". " << a->getNombre() << " (" << a->cantidadFotos() << " fotos)\n";
+            disponibles++;
+        }
+    }
+
+    if (disponibles == 0) {
+        cout << "No hay albumes disponibles para mostrar.\n";
+        Metricas::mostrar("Visitar perfil", memoriaLocal + sizeof(nombre));
+        return;
+    }
+
+    cout << "Seleccione un album o -1 para regresar: ";
+    int eleccion;
+    cin >> eleccion;
+    if (eleccion < 0 || eleccion >= disponibles) {
+        Metricas::mostrar("Visitar perfil", memoriaLocal + sizeof(nombre) + sizeof(eleccion));
+        return;
+    }
+
+    Album *albumElegido = 0;
+    int contador = 0;
+    for (int i = 0; i < amigo->cantidadAlbumes(); i++) {
+        Metricas::iterar();
+        Album *a = amigo->obtenerAlbum(i);
+        if (a->getPrivacidadAlbum() == PUBLICO || a->getPrivacidadAlbum() == AMIGOS) {
+            if (contador == eleccion) albumElegido = a;
+            contador++;
+        }
+    }
+
+    if (albumElegido != 0 && albumElegido->cantidadFotos() > 0) {
+        int pos = 0;
+        char opcion;
+        do {
+            Foto *foto = albumElegido->obtenerFoto(pos);
+            cout << "\nFoto " << (pos + 1) << "/" << albumElegido->cantidadFotos() << "\n";
+            cout << "Ruta: " << foto->getRuta() << "\n";
+            cout << "Likes: " << foto->getLikes() << "\n";
+            cout << "Ingrese la letra correspondiente a la opcion deseada\n";
+            cout << "[S]iguiente [P]revia [L]ike(dar/quitar) [X]salir: ";
+            cin >> opcion;
+
+            switch (opcion) {
+            case 'S':
+            case 's':
+                pos = (pos + 1) % albumElegido->cantidadFotos();
+                break;
+
+            case 'P':
+            case 'p':
+                pos = (pos - 1 + albumElegido->cantidadFotos()) % albumElegido->cantidadFotos();
+                break;
+
+            case 'L':
+            case 'l':{
+                bool validarLike = actual->fotoTieneLike(foto->getId());
+                if (validarLike) {
+                    actual->quitarLike(foto->getId());
+                    foto->cambiarLike(false);
+                    cout << "Like quitado.\n";
+                } else {
+                    actual->agregarLike(foto->getId());
+                    foto->cambiarLike(true);
+                    cout << "Like agregado.\n";
+                }
+                break;
+            }
+
+            case 'X':
+            case 'x':
+                break;
+
+            default:
+                cout << "Opcion invalida. Intente nuevamente.\n";
+                break;
+            }
+        } while (opcion != 'x' && opcion != 'X');
+    }
+    Metricas::mostrar("Visitar perfil", memoriaLocal + sizeof(nombre) + sizeof(eleccion));
+}
+
+void RedSocial::sugerenciasAmistad(Usuario *actual, int k) {
+    Metricas::reiniciar();
+    long long memoriaLocal = sizeof(actual) + sizeof(k);
+    int posActual = -1;
+    for (int i = 0; i < usuarios.tamano(); i++) {
+        Metricas::iterar();
+        if (usuarios.obtener(i)->getId() == actual->getId()) posActual = i;
+    }
+
+    int max = k;
+    if (max > usuarios.tamano() - 1) max = usuarios.tamano() - 1;
+    int *ids = new int[max > 0 ? max : 1];
+    int *comunes = new int[max > 0 ? max : 1];
+    Memoria::reservar(sizeof(int) * (max > 0 ? max : 1) * 2);
+
+    int cantidad = 0;
+    for (int i = 0; i < usuarios.tamano(); i++) {
+        Metricas::iterar();
+        if (i == posActual || matriz.amistad(posActual, i)) continue;
+        int c = matriz.cantidadComun(posActual, i);
+        if (c == 0) continue;
+
+        int p = cantidad;
+        if (cantidad < max) {
+            ids[cantidad] = usuarios.obtener(i)->getId();
+            comunes[cantidad] = c;
+            cantidad++;
+        } else {
+            int menosComunes = 0;
+            for (int j = 1; j < cantidad; j++) {
+                Metricas::iterar();
+                if (comunes[j] < comunes[menosComunes]) menosComunes = j;
+            }
+            if (c > comunes[menosComunes]) {
+                ids[menosComunes] = usuarios.obtener(i)->getId();
+                comunes[menosComunes] = c;
+            }
+        }
+    }
+
+    //Ordenar por cantidad de amigos comunes (descendente)
+    for (int i = 0; i < cantidad - 1; i++) {
+        for (int j = i + 1; j < cantidad; j++) {
+            Metricas::iterar();
+            if (comunes[j] > comunes[i]) {
+                int temp = comunes[i]; comunes[i] = comunes[j]; comunes[j] = temp;
+                temp = ids[i]; ids[i] = ids[j]; ids[j] = temp;
+            }
+        }
+    }
+
+    cout << "\n_-_-_-_-Sugerencias de Amistad-_-_-_-_\n";
+    for (int i = 0; i < cantidad; i++) {
+        Metricas::iterar();
+        Usuario *u = buscarIdUsuario(ids[i]);
+        if (u != 0) cout << (i + 1) << ". " << u->getNombre() << " - " << comunes[i] << " amigos en comun\n";
+    }
+
+    if (cantidad > 0) {
+        cout << "Ingrese el numero de sugerencia para enviar solicitud de amistad (-1 para salir): ";
+        int op;
+        cin >> op;
+        if (op >= 1 && op <= cantidad) {
+            Usuario *u = buscarIdUsuario(ids[op - 1]);
+            if (u != 0 && enviarSolicitud(actual, u->getNombre())) cout << "Solicitud enviada.\n";
+            else cout << "No se pudo enviar la solicitud.\n";
+        }
+    }
+
+    delete[] ids;
+    delete[] comunes;
+    Memoria::liberar(sizeof(int) * (max > 0 ? max : 1) * 2);
+    Metricas::mostrar("Sugerencias de amistad", memoriaLocal);
 }
