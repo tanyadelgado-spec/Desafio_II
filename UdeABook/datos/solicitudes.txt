@@ -1,2 +1,0 @@
-# emisor|receptor
-2|7

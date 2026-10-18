@@ -1,7 +1,0 @@
-# idFoto|idAlbum|nombre|fecha|tamano|ruta|likes
-201|101|Malecon2612|20260812103000|184523|/users/base/ana/albums/Cartagena2026/Malecon2612.png|12
-202|101|Bocagrande1|20260812121500|193820|/users/base/ana/albums/Cartagena2026/Bocagrande1.png|8
-203|103|PlazaBotero|20260705170000|201234|/users/base/bruno/albums/Medellin/PlazaBotero.png|17
-204|104|Paisaje|20260520143000|150321|/users/base/carla/albums/Viajes/Paisaje.png|4
-205|105|Clase|20260901110000|132100|/users/base/diego/albums/Universidad/Clase.png|9
-206|106|Montana|20260410100000|222900|/users/base/elena/albums/Naturaleza/Montana.png|21

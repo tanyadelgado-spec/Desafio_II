@@ -1,7 +1,0 @@
-# idAlbum|propietario|nombre|ruta|privacidadAlbum(0 publico,1 privado,2 amigos)
-101|2|Cartagena2026|/users/base/ana/albums/Cartagena2026|2
-102|2|Familia|/users/base/ana/albums/Familia|1
-103|3|Medellin|/users/base/bruno/albums/Medellin|0
-104|4|Viajes|/users/base/carla/albums/Viajes|2
-105|5|Universidad|/users/base/diego/albums/Universidad|0
-106|6|Naturaleza|/users/base/elena/albums/Naturaleza|2

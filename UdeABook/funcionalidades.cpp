@@ -20,9 +20,10 @@ void Metricas::iterar(long long cantidad) { iteraciones += cantidad; }
 void Metricas::externa(long long cantidad) { externas += cantidad; }
 long long Metricas::getIteraciones() { return iteraciones; }
 long long Metricas::getExternas() { return externas; }
+
 //Imprimir metricas
 void Metricas::mostrar(const char *nombre, long long memoriaLocal) {
-    cout << "\n-_-_-_-_-_-_-_- Metricas -_-_-_-_-_-_-_- " << nombre << endl;
+    cout << "\n-_-_-_-_-_-_-_-_-_-Metricas-_-_-_-_-_-_-_-_-_-\n" << nombre << endl;
     cout << "Iteraciones (directas e indirectas): " << iteraciones << endl;//Iteraciones contabilizadas
     cout << "Componentes externos invocados: " << externas << "\n";//Llamadas externas registradas
     cout << "Memoria (aproximada): " << Memoria::actual() + memoriaLocal << " bytes\n";//Memoria contabilizada globalmente + Memoria local declarada
@@ -375,30 +376,36 @@ bool RedSocial::rechazarSolicitud(Usuario *actual, int posicionListaU) {
 }
 
 void RedSocial::administrarAmistades(Usuario *actual) {
-    int opcion = 0;
+    int opcion;
 
     do {
-        cout << "\n_-_-_-_-_-Administrar Amistades-_-_-_-_-_\n";
+
+        cout << "\n_-_-_-Administrar Amistades-_-_-_\n";
         cout << "1. Enviar solicitud de amistad\n";
         cout << "2. Aceptar solicitudes de amistad\n";
         cout << "3. Rechazar solicitud de amistad\n";
         cout << "4. Regresar\n";
         cout << "Ingrese una opcion: ";
         cin >> opcion;
+        cin.ignore();
 
         switch (opcion) {
+
         case 1:{
             char nombre[128];
             cout << "Nombre de usuario: ";
-            cin >> nombre;
-            if (enviarSolicitud(actual, nombre)) { cout << "Solicitud enviada.\n";}
-            else { cout << "No fue posible enviar la solicitud, intente de nuevo.\n";}
+            cin.getline(nombre, 128);
+
+            if (enviarSolicitud(actual, nombre)) { cout << "Solicitud enviada.\n";
+            }else {
+                cout << "No fue posible enviar la solicitud, intente de nuevo.\n";
+            }
             break;
         }
 
         case 2:{
             Metricas::reiniciar();
-            int cantidad = 0;
+            int cantidad=0;
             cout << "\n_-_-_-Solicitudes Recibidas-_-_-_\n";
             for (int i = 0; i < solicitudes.tamano(); i++) {
                 Metricas::iterar();
@@ -412,6 +419,7 @@ void RedSocial::administrarAmistades(Usuario *actual) {
             int pos;
             cout << "Ingrese la posicion de la solicitud o '-1' para regresar: ";
             cin >> pos;
+
             if (pos >= 0) {
                 if (aceptarSolicitud(actual, pos)) { cout << "Solicitud aceptada.\n";}
                 else { cout << "Posicion invalida.\n";};
@@ -437,6 +445,7 @@ void RedSocial::administrarAmistades(Usuario *actual) {
             int pos;
             cout << "Ingrese la posicion de la solicitud o -1 para regresar: ";
             cin >> pos;
+
             if (pos >= 0) {
                 if (rechazarSolicitud(actual, pos)) { cout << "Solicitud rechazada.\n";}
                 else { cout << "Posicion invalida.\n";}
@@ -446,6 +455,7 @@ void RedSocial::administrarAmistades(Usuario *actual) {
             break;
         }
 
+
         case 4:
             break;
 
@@ -453,6 +463,7 @@ void RedSocial::administrarAmistades(Usuario *actual) {
             cout << "Opcion invalida. Intente nuevamente.\n";
             break;
         }
+
     } while (opcion != 4);
 }
 
@@ -549,12 +560,12 @@ void RedSocial::mostrarMejoresAmigos(Usuario *actual) {
         Memoria::liberar(sizeof(int) * disponibles * 2);
     }
 
-    cout << "\n_-_-_-_-_-_-Amigos Destacados-_-_-_-_-_-_\n";
+    cout << "\n_-_-_-_-_-_-_-_-_-Amigos Destacados-_-_-_-_-_-_-_-_-_\n";
     for (int i = 0; i < maximo; i++) {
         Metricas::iterar();
         Usuario *u = buscarIdUsuario(primerGrupo[i]);
         if (u != 0) {
-            cout << "Amigo " << (i + 1) << ": " << u->getNombre() << "\n";
+            cout << (i + 1) << ". " << u->getNombre() << "\n";
             cout << "Foto de perfil: " << u->getRutaPerfil() << "\n";
         }
     }
@@ -562,69 +573,75 @@ void RedSocial::mostrarMejoresAmigos(Usuario *actual) {
     //Otro grupo de 3 distintos (min. 6 amigos)
     if (cantidad >= 6 && maximo == 3) {
         int op;
-        cout << "\n1. Actualizar fotos\n2. Continuar\n";
-        cout << "Ingrese una opción: ";
-        cin >> op;
-        if (op == 1) {
-            int *segundoGrupo = new int[3];
-            Memoria::reservar(sizeof(int) * 3);
+        do{
 
-            for (int s = 0; s < 3; s++) {
-                int disponibles = 0;
-                for (int i = 0; i < cantidadCandidatos; i++) {
+            cout << "\n1. Actualizar fotos\n2. Continuar\n";
+            cout << "Ingrese una opcion: ";
+            cin >> op;
+            cin.ignore();
+
+            if (op == 1) {
+                int *segundoGrupo = new int[3];
+                Memoria::reservar(sizeof(int) * 3);
+
+                for (int s = 0; s < 3; s++) {
+                    int disponibles = 0;
+                    for (int i = 0; i < cantidadCandidatos; i++) {
+                        Metricas::iterar();
+                        bool prohibido = false;
+                        for (int j = 0; j < 3; j++) {
+                            Metricas::iterar();
+                            if (primerGrupo[j] == ids[i]) prohibido = true;
+                        }
+                        for (int j = 0; j < s; j++) {
+                            Metricas::iterar();
+                            if (segundoGrupo[j] == ids[i]) prohibido = true;
+                        }
+                        if (!prohibido) disponibles++;
+                    }
+
+                    int *idsTemp = new int[disponibles];
+                    int *prioridadesTemp = new int[disponibles];
+                    Memoria::reservar(sizeof(int) * disponibles * 2);
+                    int p = 0;
+                    for (int i = 0; i < cantidadCandidatos; i++) {
+                        Metricas::iterar();
+                        bool prohibido = false;
+                        for (int j = 0; j < 3; j++) {
+                            Metricas::iterar();
+                            if (primerGrupo[j] == ids[i]) prohibido = true;
+                        }
+                        for (int j = 0; j < s; j++) {
+                            Metricas::iterar();
+                            if (segundoGrupo[j] == ids[i]) prohibido = true;
+                        }
+                        if (!prohibido) {
+                            idsTemp[p] = ids[i];
+                            prioridadesTemp[p] = prioridades[i];
+                            p++;
+                        }
+                    }
+                    int elegido = elegirPonderado(prioridadesTemp, p);
+                    segundoGrupo[s] = idsTemp[elegido];
+                    delete[] idsTemp;
+                    delete[] prioridadesTemp;
+                    Memoria::liberar(sizeof(int) * disponibles * 2);
+                }
+
+                cout << "\n_-_-_-_-_-Nuevo Grupo de Amigos Destacados-_-_-_-_-_\n";
+                for (int i = 0; i < 3; i++) {
                     Metricas::iterar();
-                    bool prohibido = false;
-                    for (int j = 0; j < 3; j++) {
-                        Metricas::iterar();
-                        if (primerGrupo[j] == ids[i]) prohibido = true;
-                    }
-                    for (int j = 0; j < s; j++) {
-                        Metricas::iterar();
-                        if (segundoGrupo[j] == ids[i]) prohibido = true;
-                    }
-                    if (!prohibido) disponibles++;
-                }
-
-                int *idsTemp = new int[disponibles];
-                int *prioridadesTemp = new int[disponibles];
-                Memoria::reservar(sizeof(int) * disponibles * 2);
-                int p = 0;
-                for (int i = 0; i < cantidadCandidatos; i++) {
-                    Metricas::iterar();
-                    bool prohibido = false;
-                    for (int j = 0; j < 3; j++) {
-                        Metricas::iterar();
-                        if (primerGrupo[j] == ids[i]) prohibido = true;
-                    }
-                    for (int j = 0; j < s; j++) {
-                        Metricas::iterar();
-                        if (segundoGrupo[j] == ids[i]) prohibido = true;
-                    }
-                    if (!prohibido) {
-                        idsTemp[p] = ids[i];
-                        prioridadesTemp[p] = prioridades[i];
-                        p++;
+                    Usuario *u = buscarIdUsuario(segundoGrupo[i]);
+                    if (u != 0) {
+                        cout << (i + 1) << ". " << u->getNombre() << "\n";
+                        cout << "Foto de perfil: " << u->getRutaPerfil() << "\n";
                     }
                 }
-                int elegido = elegirPonderado(prioridadesTemp, p);
-                segundoGrupo[s] = idsTemp[elegido];
-                delete[] idsTemp;
-                delete[] prioridadesTemp;
-                Memoria::liberar(sizeof(int) * disponibles * 2);
+                delete[] segundoGrupo;
+                Memoria::liberar(sizeof(int) * 3);
             }
+        }while(op!=2);
 
-            cout << "\n_-_-_-Nuevo Grupo de Amigos Destacados-_-_-_\n";
-            for (int i = 0; i < 3; i++) {
-                Metricas::iterar();
-                Usuario *u = buscarIdUsuario(segundoGrupo[i]);
-                if (u != 0) {
-                    cout << "Amigo " << (i + 1) << ": " << u->getNombre() << "\n";
-                    cout << "Foto de perfil: " << u->getRutaPerfil() << "\n";
-                }
-            }
-            delete[] segundoGrupo;
-            Memoria::liberar(sizeof(int) * 3);
-        }
     } else if (cantidad < 6) {
         cout << "\nNo es posible actualizar la lista con amigos diferentes, ya que tiene menos de 6 amigos.\n";
     }
@@ -640,8 +657,10 @@ void RedSocial::visitarPerfil(Usuario *actual) {
     Metricas::reiniciar();
     long long memoriaLocal = sizeof(actual);
     char nombre[128];
+
     cout << "Nombre de usuario del amigo: ";
-    cin >> nombre;
+    cin.getline(nombre, 128);
+
     Usuario *amigo = buscarUsuario(nombre);
     if (amigo == 0 || !actual->esAmigo(amigo->getId())) {
         cout << "El usuario no existe o no esta en la lista de amigos.\n";
@@ -696,6 +715,7 @@ void RedSocial::visitarPerfil(Usuario *actual) {
             cout << "Ingrese la letra correspondiente a la opcion deseada\n";
             cout << "[S]iguiente [P]revia [L]ike(dar/quitar) [X]salir: ";
             cin >> opcion;
+            cin.ignore();
 
             switch (opcion) {
             case 'S':
@@ -740,6 +760,7 @@ void RedSocial::sugerenciasAmistad(Usuario *actual, int k) {
     Metricas::reiniciar();
     long long memoriaLocal = sizeof(actual) + sizeof(k);
     int posActual = -1;
+
     for (int i = 0; i < usuarios.tamano(); i++) {
         Metricas::iterar();
         if (usuarios.obtener(i)->getId() == actual->getId()) posActual = i;
@@ -798,6 +819,8 @@ void RedSocial::sugerenciasAmistad(Usuario *actual, int k) {
         cout << "Ingrese el numero de sugerencia para enviar solicitud de amistad (-1 para salir): ";
         int op;
         cin >> op;
+        cin.ignore();
+
         if (op >= 1 && op <= cantidad) {
             Usuario *u = buscarIdUsuario(ids[op - 1]);
             if (u != 0 && enviarSolicitud(actual, u->getNombre())) cout << "Solicitud enviada.\n";
@@ -830,6 +853,7 @@ bool RedSocial::enviarMensaje(Usuario *actual, const char *destino, const char *
     Metricas::reiniciar();
     long long memoriaLocal = sizeof(actual) + sizeof(destino) + sizeof(texto);
     Usuario *u = buscarUsuario(destino);
+
     if (u == 0 || !actual->esAmigo(u->getId()) || strlen(texto) > 512) {
         Metricas::mostrar("Enviar mensaje", memoriaLocal);
         return false;
@@ -857,15 +881,15 @@ void RedSocial::administrarMensajes(Usuario *actual) {
         cout << "1. Enviar mensaje\n2. Leer nuevos mensajes\n3. Buscar por rango de fecha\n4. Regresar\n";
         cout << "Ingrese una opcion: ";
         cin >> opcion;
-        cin.ignore(10000, '\n');
+        cin.ignore();
 
         switch (opcion) {
         case 1:{
             char destino[128];
             char texto[513];
 
-            cout << "Nombre del amigo: "; cin >> destino;
-            cin.ignore(10000, '\n');
+            cout << "Nombre del amigo: ";
+            cin.getline(destino, 128);
             cout << "Mensaje (maximo 512 caracteres): ";
             cin.getline(texto, 513);
 
@@ -914,8 +938,11 @@ void RedSocial::administrarMensajes(Usuario *actual) {
         case 3:{
             Metricas::reiniciar();
             char inicio[32], fin[32];
-            cout << "Fecha inicial (formato: AAAAMMDDHHMMSS): "; cin >> inicio;
-            cout << "Fecha final (formato: AAAAMMDDHHMMSS): "; cin >> fin;
+            cout << "Fecha inicial (formato: AAAAMMDDHHMMSS): ";
+            cin.getline(inicio, 32);
+            cout << "Fecha final (formato: AAAAMMDDHHMMSS): ";
+            cin.getline(fin, 32);
+
             cout << "\nMensajes encontrados en el rango:\n";
             for (int i = 0; i < mensajes.tamano(); i++) {
                 Metricas::iterar();
