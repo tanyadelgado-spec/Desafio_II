@@ -32,7 +32,7 @@
 31|17|foto_31.png|20260730080000|935590|albumes/usuario_40/momentos/foto_31.png|74
 32|18|foto_32.png|20260403080000|2838125|albumes/usuario_42/momentos/foto_32.png|30
 33|19|foto_33.png|20260308080000|3311752|albumes/usuario_44/momentos/foto_33.png|30
-34|20|foto_34.png|20260826080000|3179342|albumes/usuario_44/universidad/foto_34.png|12
+34|20|foto_34.png|20260826080000|3179342|albumes/usuario_44/universidad/foto_34.png|13
 35|20|foto_35.png|20260410080000|2701277|albumes/usuario_44/universidad/foto_35.png|26
 36|21|foto_36.png|20260605080000|1269139|albumes/usuario_48/momentos/foto_36.png|57
 37|22|foto_37.png|20260214080000|2727952|albumes/usuario_49/momentos/foto_37.png|72

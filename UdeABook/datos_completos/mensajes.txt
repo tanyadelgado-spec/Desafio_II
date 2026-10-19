@@ -4999,3 +4999,5 @@
 4998|640|491|20260221102200|0|Te comparto la información del proyecto.
 4999|893|53|20260816204700|1|Perfecto, muchas gracias.
 5000|509|809|20260714101500|0|¿Tienes los apuntes de la clase?
+5001|44|1|20260810201600|1|Nos vemos en la universidad.
+5002|127|1|20260313033700|1|¿Tienes los apuntes de la clase?

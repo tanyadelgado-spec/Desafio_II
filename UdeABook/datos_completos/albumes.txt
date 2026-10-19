@@ -17,7 +17,7 @@
 16|36|Momentos|albumes/usuario_36/momentos|2
 17|40|Momentos|albumes/usuario_40/momentos|1
 18|42|Momentos|albumes/usuario_42/momentos|0
-19|44|Momentos|albumes/usuario_44/momentos|1
+19|44|Momentos|albumes/usuario_44/momentos|2
 20|44|Universidad|albumes/usuario_44/universidad|2
 21|48|Momentos|albumes/usuario_48/momentos|2
 22|49|Momentos|albumes/usuario_49/momentos|1
